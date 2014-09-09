@@ -1,0 +1,5 @@
+mkdir -p dist
+cd dist
+gox ../.
+cd ..
+s3cmd -P sync ./dist/* s3://sudhirj-monolith
