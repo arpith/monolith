@@ -1,0 +1,11 @@
+{
+	"ImportPath": "github.com/sudhirj/monolith",
+	"GoVersion": "go1.3.2",
+	"Deps": [
+		{
+			"ImportPath": "github.com/codegangsta/negroni",
+			"Comment": "v0.1-27-g46bd821",
+			"Rev": "46bd821940d86fb9777f7f86e9ae428132e110da"
+		}
+	]
+}
