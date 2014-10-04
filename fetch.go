@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -14,11 +16,18 @@ func deliver(sourceURL *url.URL, destinationURL *url.URL) {
 		return
 	}
 
+	data, err := ioutil.ReadAll(sourceResponse.Body)
+	if err != nil {
+		log.Print("Unable to parse response")
+		return
+	}
+	dataReader := bytes.NewReader(data)
+
 	values := destinationURL.Query()
 	values.Add("x_monolith_final_url", sourceResponse.Request.URL.String())
 	destinationURL.RawQuery = values.Encode()
 
-	postResponse, err := http.Post(destinationURL.String(), "text/html", sourceResponse.Body)
+	postResponse, err := http.Post(destinationURL.String(), "text/html", dataReader)
 	if err != nil {
 		log.Print("Couldn't create POST to ", destinationURL.String(), err.Error())
 		return
