@@ -34,17 +34,9 @@ func TestDelivery(t *testing.T) {
 	url := monolithServer.URL + "?src=" + sourceServer.URL + "&dest=" + destinationServer.URL
 	http.Get(url)
 
-	timeout := make(chan bool, 1)
-	go func() {
-		time.Sleep(1 * time.Second)
-		timeout <- true
-	}()
-
 	select {
 	case <-success:
-
-	case <-timeout:
+	case <-time.After(1 * time.Second):
 		t.Error("No call made")
 	}
-
 }
