@@ -15,7 +15,7 @@ The Monolith lets web browsers hold an open connection to it via HTTP SSE (Serve
 The Monolith also acts as a lightweight task queue - just tell it to call a URL (either on the same source server or a different one) and it will do so until it receives a successful response. Also schedule calls in the short term future to help with task management or rate limiting. Because of the ability to have the tasks call URLs on multiple hosts, it becomes trivial to have the Monolith manage a work pipeline as well.
 
 ##Reliability
-Monolith is designed to be massively distributed, so all operations work on a best effort basis. In a mult-server setup, the Monolith requires one instance of Redis per cluster to co-ordinate work and record measurements. As always, it makes sense to design for failure and idempotence. 
+Monolith is designed to be massively distributed, so all operations work on a best effort basis. In a mult-server setup, the Monolith requires one instance of Redis per cluster to co-ordinate work and record measurements. As always, it makes sense to design for failure, automatic retries and [idempotence](https://en.wikipedia.org/wiki/Idempotence). 
 
 
 
