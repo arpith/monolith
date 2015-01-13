@@ -8,7 +8,8 @@ import (
 	"net/url"
 )
 
-func deliver(sourceURL *url.URL, destinationURL *url.URL) {
+// Deliver POSTs the content of the source URL to the destination URL.
+func Deliver(sourceURL *url.URL, destinationURL *url.URL) {
 	log.Print("Fetching ", sourceURL.String())
 	sourceResponse, err := http.Get(sourceURL.String())
 	if err != nil {
@@ -23,10 +24,6 @@ func deliver(sourceURL *url.URL, destinationURL *url.URL) {
 	}
 	dataReader := bytes.NewReader(data)
 
-	values := destinationURL.Query()
-	values.Add("x_monolith_final_url", sourceResponse.Request.URL.String())
-	destinationURL.RawQuery = values.Encode()
-
 	postResponse, err := http.Post(destinationURL.String(), "text/html", dataReader)
 	if err != nil {
 		log.Print("Couldn't create POST to ", destinationURL.String(), err.Error())
@@ -37,19 +34,24 @@ func deliver(sourceURL *url.URL, destinationURL *url.URL) {
 	sourceResponse.Body.Close()
 }
 
-var fetchHandler = func(w http.ResponseWriter, req *http.Request) {
-	if err := req.ParseForm(); err != nil {
-		http.Error(w, "Unable to parse request", 400)
+// NewFetchHandler creates a fetch handler. The handler take a `src` and `dest` parameter and posts the response from `src` into `dest`.
+func NewFetchHandler() func(w http.ResponseWriter, req *http.Request) {
+	return func(w http.ResponseWriter, req *http.Request) {
+		log.Println("Starting FETCH request.")
+		if err := req.ParseForm(); err != nil {
+			http.Error(w, "Unable to parse request", 400)
+			return
+		}
+		sourceURL, err := url.ParseRequestURI(req.FormValue("src"))
+		if err != nil {
+			http.Error(w, "Please include a valid URL as the `src` parameter - the URL that you want to fetch.", 400)
+			return
+		}
+		destinationURL, err := url.ParseRequestURI(req.FormValue("dest"))
+		if err != nil {
+			http.Error(w, "Please include a valid URL as the `dest` parameter - the URL that you want to POST the fetched page to.", 400)
+			return
+		}
+		go Deliver(sourceURL, destinationURL)
 	}
-	sourceURL, err := url.ParseRequestURI(req.FormValue("src"))
-	if err != nil {
-		http.Error(w, "Please include a valid URL as the `src` parameter - the URL that you want to fetch.", 400)
-	}
-	destinationURL, err := url.ParseRequestURI(req.FormValue("dest"))
-	if err != nil {
-		http.Error(w, "Please include a valid URL as the `dest` parameter - the URL that you want to POST the fetched page to.", 400)
-	}
-
-	go deliver(sourceURL, destinationURL)
-
 }

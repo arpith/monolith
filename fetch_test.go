@@ -28,7 +28,7 @@ func TestDelivery(t *testing.T) {
 	}))
 	defer destinationServer.Close()
 
-	monolithServer := httptest.NewServer(http.HandlerFunc(fetchHandler))
+	monolithServer := httptest.NewServer(http.HandlerFunc(NewFetchHandler()))
 	defer monolithServer.Close()
 
 	url := monolithServer.URL + "?src=" + sourceServer.URL + "&dest=" + destinationServer.URL
