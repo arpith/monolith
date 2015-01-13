@@ -17,13 +17,13 @@ func TestPulsar(t *testing.T) {
 	for i := 0; i < 100; i++ {
 		waiter.Add(1)
 		listener := pulsar.Listen()
-		go func() {
+		go func(t *testing.T, waiter *sync.WaitGroup, listener <-chan string) {
 			t.Log("adding listener")
 			message := <-listener
 			if message == "PULSE" {
 				waiter.Done()
 			}
-		}()
+		}(t, waiter, listener)
 	}
 	forgottenListener := pulsar.Listen()
 	pulsar.Forget(forgottenListener)
@@ -32,7 +32,7 @@ func TestPulsar(t *testing.T) {
 		t.Error("should not have sent on this channel")
 	}()
 
-	success := make(chan bool, 1)
+	success := make(chan bool)
 	go func() {
 		waiter.Wait()
 		success <- true
@@ -50,7 +50,7 @@ func TestPulsar(t *testing.T) {
 func TestPubsub(t *testing.T) {
 	monolithServer := httptest.NewServer(http.HandlerFunc(NewBroadcastHandler()))
 	url := monolithServer.URL + "/channel"
-	success := make(chan bool, 1)
+	success := make(chan bool)
 	group := &sync.WaitGroup{}
 	for i := 1; i < 100; i++ {
 		group.Add(1)

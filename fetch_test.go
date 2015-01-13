@@ -16,7 +16,7 @@ func TestDelivery(t *testing.T) {
 		fmt.Fprintln(w, message)
 	}))
 	defer sourceServer.Close()
-	success := make(chan bool, 1)
+	success := make(chan bool)
 	destinationServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body, err := ioutil.ReadAll(r.Body)
 		if err != nil {

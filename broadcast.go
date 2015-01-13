@@ -90,7 +90,7 @@ func (b *broker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	case "POST":
-		channel.Pulse("PING")
+		go channel.Pulse("PING")
 	}
 }
 
