@@ -62,7 +62,6 @@ func TestPubsub(t *testing.T) {
 			}
 			defer resp.Body.Close()
 			reader := bufio.NewReader(resp.Body)
-			data := ""
 			for {
 				line, err := reader.ReadBytes('\n')
 				line = bytes.TrimSpace(line)
@@ -75,7 +74,7 @@ func TestPubsub(t *testing.T) {
 				}
 			}
 			if err != nil {
-				t.Error("Shouldn't be an error", data)
+				t.Error("Shouldn't be an error")
 			}
 		}(t, group)
 	}

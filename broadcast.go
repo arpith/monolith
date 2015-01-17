@@ -17,8 +17,10 @@ type Pulsar struct {
 //Listen creates a new receiver channel which acts as a subscription. In order to prevent leaks, always return a channel after use via `Forget`
 func (p *Pulsar) Listen() <-chan string {
 	listener := make(chan string)
+	p.lock.Lock()
 	p.listeners[listener] = true
 	p.views[listener] = listener
+	p.lock.Unlock()
 	return listener
 }
 
@@ -85,7 +87,7 @@ func (b *broker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				f.Flush()
 			case <-closer.CloseNotify():
 				return
-			case <-time.After(60 * time.Second):
+			case <-time.After(300 * time.Second):
 				return
 			}
 		}

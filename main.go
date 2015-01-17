@@ -1,24 +1,25 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 	"os"
 	"strings"
+
+	"github.com/julienschmidt/httprouter"
 )
 
 func main() {
-	mux := http.NewServeMux()
+	router := httprouter.New()
 
-	mux.HandleFunc("/fetch", NewFetchHandler())
-	mux.HandleFunc("/broadcast", NewBroadcastHandler())
-	mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
-		fmt.Fprintf(w, "Monolith")
-	})
+	router.HandlerFunc("POST", "/fetch", NewFetchHandler())
+
+	broadcaster := NewBroadcastHandler()
+	router.HandlerFunc("GET", "/broadcast/:channel", broadcaster)
+	router.HandlerFunc("POST", "/broadcast/:channel", broadcaster)
 
 	port := strings.TrimSpace(os.Getenv("PORT"))
 	if port == "" {
 		port = "3001"
 	}
-	http.ListenAndServe(":"+port, mux)
+	http.ListenAndServe(":"+port, router)
 }
