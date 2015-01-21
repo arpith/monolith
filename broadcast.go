@@ -5,61 +5,24 @@ import (
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/sudhirj/strobe"
 )
 
-//Pulsar is an emitter that allows broadcasting and listening to messages via channels
-type Pulsar struct {
-	listeners map[chan string]bool
-	views     map[<-chan string]chan string
-	lock      sync.Locker
-}
-
-//Listen creates a new receiver channel which acts as a subscription. In order to prevent leaks, always return a channel after use via `Forget`
-func (p *Pulsar) Listen() <-chan string {
-	listener := make(chan string)
-	p.lock.Lock()
-	p.listeners[listener] = true
-	p.views[listener] = listener
-	p.lock.Unlock()
-	return listener
-}
-
-//Pulse sends a message to all listening channels
-func (p *Pulsar) Pulse(message string) {
-	p.lock.Lock()
-	for c := range p.listeners {
-		c <- message
-	}
-	p.lock.Unlock()
-}
-
-//Forget removes a channel from the list of receivers
-func (p *Pulsar) Forget(view <-chan string) {
-	p.lock.Lock()
-	delete(p.listeners, p.views[view])
-	delete(p.views, view)
-	p.lock.Unlock()
-}
-
-//NewPulsar creates a new Pulsar that can be used for PubSub
-func NewPulsar() *Pulsar {
-	return &Pulsar{listeners: make(map[chan string]bool), views: make(map[<-chan string]chan string), lock: &sync.Mutex{}}
-}
-
 type broker struct {
-	channels           map[string]*Pulsar
-	pulsarCreationLock sync.Locker
+	channels map[string]*strobe.Strobe
+	sync.RWMutex
 }
 
 func (b *broker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	channelName := r.URL.Path
-	b.pulsarCreationLock.Lock()
+	b.Lock()
 	channel, ok := b.channels[channelName]
 	if !ok {
-		channel = NewPulsar()
+		channel = strobe.NewStrobe()
 		b.channels[channelName] = channel
 	}
-	b.pulsarCreationLock.Unlock()
+	b.Unlock()
 	switch r.Method {
 	case "GET":
 		f, ok := w.(http.Flusher)
@@ -79,7 +42,7 @@ func (b *broker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Connection", "keep-alive")
 
 		listener := channel.Listen()
-		defer channel.Forget(listener)
+		defer channel.Off(listener)
 		for {
 			select {
 			case msg := <-listener:
@@ -98,6 +61,6 @@ func (b *broker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 // NewBroadcastHandler creates a new handler that handles pub sub
 func NewBroadcastHandler() func(w http.ResponseWriter, req *http.Request) {
-	broker := &broker{channels: make(map[string]*Pulsar), pulsarCreationLock: &sync.Mutex{}}
+	broker := &broker{channels: make(map[string]*strobe.Strobe)}
 	return broker.ServeHTTP
 }

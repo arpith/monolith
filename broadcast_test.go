@@ -11,42 +11,6 @@ import (
 	"time"
 )
 
-func TestPulsar(t *testing.T) {
-	pulsar := NewPulsar()
-	waiter := &sync.WaitGroup{}
-	for i := 0; i < 100; i++ {
-		waiter.Add(1)
-		listener := pulsar.Listen()
-		go func(t *testing.T, waiter *sync.WaitGroup, listener <-chan string) {
-			t.Log("adding listener")
-			message := <-listener
-			if message == "PULSE" {
-				waiter.Done()
-			}
-		}(t, waiter, listener)
-	}
-	forgottenListener := pulsar.Listen()
-	pulsar.Forget(forgottenListener)
-	go func() {
-		<-forgottenListener
-		t.Error("should not have sent on this channel")
-	}()
-
-	success := make(chan bool)
-	go func() {
-		waiter.Wait()
-		success <- true
-	}()
-
-	pulsar.Pulse("PULSE")
-
-	select {
-	case <-success:
-	case <-time.After(2 * time.Second):
-		t.Error("No pulse received")
-	}
-}
-
 func TestPubsub(t *testing.T) {
 	monolithServer := httptest.NewServer(http.HandlerFunc(NewBroadcastHandler()))
 	url := monolithServer.URL + "/channel"
